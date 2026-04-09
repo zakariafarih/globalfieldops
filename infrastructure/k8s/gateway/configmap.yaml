@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: globalfieldops
+  labels:
+    app: api-gateway
+    app.kubernetes.io/part-of: globalfieldops
+data:
+  TECHNICIAN_SERVICE_URL: "http://technician-service.globalfieldops.svc.cluster.local:8081"
+  WORK_ORDER_SERVICE_URL: "http://work-order-service.globalfieldops.svc.cluster.local:8082"
+  AUDIT_SERVICE_URL: "http://audit-service.globalfieldops.svc.cluster.local:8083"

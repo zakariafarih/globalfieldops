@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16-alpine:///audit_db
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://test-issuer.example.com
+          jwk-set-uri: https://test-issuer.example.com/.well-known/jwks.json

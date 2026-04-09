@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: globalfieldops
+  labels:
+    app: api-gateway
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: infrastructure-api-gateway:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: gateway-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

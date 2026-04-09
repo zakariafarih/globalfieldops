@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: technician-service
+  namespace: globalfieldops
+  labels:
+    app: technician-service
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: technician-service
+  template:
+    metadata:
+      labels:
+        app: technician-service
+    spec:
+      containers:
+        - name: technician-service
+          image: infrastructure-technician-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: technician-service-config
+            - secretRef:
+                name: technician-service-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

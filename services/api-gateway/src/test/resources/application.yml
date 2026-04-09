@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: technician-service
+              uri: ${TECHNICIAN_SERVICE_URL:http://localhost:9999}
+              predicates:
+                - Path=/api/technicians/**
+            - id: work-order-service
+              uri: ${WORK_ORDER_SERVICE_URL:http://localhost:9999}
+              predicates:
+                - Path=/api/work-orders/**
+            - id: audit-service
+              uri: ${AUDIT_SERVICE_URL:http://localhost:9999}
+              predicates:
+                - Path=/api/audit-events/**
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:keys/public-key.pem
+
+server:
+  port: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

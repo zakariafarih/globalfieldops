@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+.vscode
+.github
+
+# Docs
+docs/
+README.md
+
+# Infrastructure (not needed in image builds)
+infrastructure/
+
+# Build outputs (each service rebuilds inside Docker)
+**/target/
+
+# Test resources not needed at build time
+**/.mvn/wrapper/maven-wrapper.jar
+
+# OS
+.DS_Store
+Thumbs.db

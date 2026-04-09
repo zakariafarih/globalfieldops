@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: audit-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/audit_db}
+    username: ${SPRING_DATASOURCE_USERNAME:audit}
+    password: ${SPRING_DATASOURCE_PASSWORD:audit_secret}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9000}
+
+server:
+  port: 8083
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: audit-service
+    description: Stores immutable operational audit records
+    version: 0.0.1-SNAPSHOT
+
+logging:
+  level:
+    com.globalfieldops.audit: DEBUG
+    org.springframework.security: INFO

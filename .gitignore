@@ -1,0 +1,48 @@
+# === Java / Maven ===
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+
+# === IDE ===
+.idea/
+*.iml
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+.factorypath
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Docker ===
+docker-compose.override.yml
+
+# === Kubernetes ===
+*.kubeconfig
+
+# === Keys / Certificates ===
+*.pem
+
+# === Environment ===
+.env
+.env.*
+!.env.example
+
+# === Spring Boot ===
+spring-shell.log
+
+# === Docs (private/local) ===
+docs/
+
+# === copilot-instructions ===
+.github/

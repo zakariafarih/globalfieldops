@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-service-config
+  namespace: globalfieldops
+  labels:
+    app: audit-service
+    app.kubernetes.io/part-of: globalfieldops
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-audit:5432/audit_db"
+  SPRING_DATASOURCE_USERNAME: "audit"

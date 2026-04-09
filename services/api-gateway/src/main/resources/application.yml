@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: technician-service
+              uri: ${TECHNICIAN_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/technicians/**
+            - id: work-order-service
+              uri: ${WORK_ORDER_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/work-orders/**
+            - id: audit-service
+              uri: ${AUDIT_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/audit-events/**
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8180/realms/globalfieldops/protocol/openid-connect/certs}
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: api-gateway
+    description: API Gateway for GlobalField Ops
+    version: 0.0.1-SNAPSHOT
+
+logging:
+  level:
+    com.globalfieldops.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: INFO

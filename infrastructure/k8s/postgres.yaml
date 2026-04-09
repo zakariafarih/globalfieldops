@@ -1,0 +1,225 @@
+# PostgreSQL instances for K8s local development
+# NOT production-grade — single-replica, no persistent volume claims
+# In production, use managed databases (e.g., Amazon RDS)
+
+---
+# ── Technician DB ────────────────────────────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-technician-secret
+  namespace: globalfieldops
+  labels:
+    app: postgres-technician
+    app.kubernetes.io/part-of: globalfieldops
+type: Opaque
+stringData:
+  POSTGRES_DB: "technician_db"
+  POSTGRES_USER: "technician"
+  POSTGRES_PASSWORD: "technician_secret"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-technician
+  namespace: globalfieldops
+  labels:
+    app: postgres-technician
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-technician
+  template:
+    metadata:
+      labels:
+        app: postgres-technician
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-technician-secret
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "technician", "-d", "technician_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-technician
+  namespace: globalfieldops
+  labels:
+    app: postgres-technician
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres-technician
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+# ── Work Order DB ────────────────────────────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-workorder-secret
+  namespace: globalfieldops
+  labels:
+    app: postgres-workorder
+    app.kubernetes.io/part-of: globalfieldops
+type: Opaque
+stringData:
+  POSTGRES_DB: "workorder_db"
+  POSTGRES_USER: "workorder"
+  POSTGRES_PASSWORD: "workorder_secret"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-workorder
+  namespace: globalfieldops
+  labels:
+    app: postgres-workorder
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-workorder
+  template:
+    metadata:
+      labels:
+        app: postgres-workorder
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-workorder-secret
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "workorder", "-d", "workorder_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-workorder
+  namespace: globalfieldops
+  labels:
+    app: postgres-workorder
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres-workorder
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+# ── Audit DB ────────────────────────────────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-audit-secret
+  namespace: globalfieldops
+  labels:
+    app: postgres-audit
+    app.kubernetes.io/part-of: globalfieldops
+type: Opaque
+stringData:
+  POSTGRES_DB: "audit_db"
+  POSTGRES_USER: "audit"
+  POSTGRES_PASSWORD: "audit_secret"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-audit
+  namespace: globalfieldops
+  labels:
+    app: postgres-audit
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-audit
+  template:
+    metadata:
+      labels:
+        app: postgres-audit
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-audit-secret
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "audit", "-d", "audit_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-audit
+  namespace: globalfieldops
+  labels:
+    app: postgres-audit
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres-audit
+  ports:
+    - port: 5432
+      targetPort: 5432

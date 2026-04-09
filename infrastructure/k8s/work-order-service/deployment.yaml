@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: work-order-service
+  namespace: globalfieldops
+  labels:
+    app: work-order-service
+    app.kubernetes.io/part-of: globalfieldops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: work-order-service
+  template:
+    metadata:
+      labels:
+        app: work-order-service
+    spec:
+      containers:
+        - name: work-order-service
+          image: infrastructure-work-order-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: work-order-service-config
+            - secretRef:
+                name: work-order-service-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8082
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

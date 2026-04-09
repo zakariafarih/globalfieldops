@@ -1,0 +1,183 @@
+# docker-compose.yml — GlobalField Ops local development stack
+# Boots all services + per-service PostgreSQL databases
+# Usage: docker compose -f infrastructure/docker-compose.yml up --build
+
+services:
+  # ── Databases ──────────────────────────────────────────────
+  postgres-technician:
+    image: postgres:16-alpine
+    container_name: gfo-postgres-technician
+    environment:
+      POSTGRES_DB: technician_db
+      POSTGRES_USER: technician
+      POSTGRES_PASSWORD: technician_secretf
+    ports:
+      - "5436:5432"
+    volumes:
+      - pg-technician-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U technician -d technician_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-workorder:
+    image: postgres:16-alpine
+    container_name: gfo-postgres-workorder
+    environment:
+      POSTGRES_DB: workorder_db
+      POSTGRES_USER: workorder
+      POSTGRES_PASSWORD: workorder_secret
+    ports:
+      - "5437:5432"
+    volumes:
+      - pg-workorder-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workorder -d workorder_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-audit:
+    image: postgres:16-alpine
+    container_name: gfo-postgres-audit
+    environment:
+      POSTGRES_DB: audit_db
+      POSTGRES_USER: audit
+      POSTGRES_PASSWORD: audit_secret
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg-audit-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audit -d audit_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Identity Provider ───────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: gfo-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  # ── Application Services ──────────────────────────────────
+
+  technician-service:
+    build:
+      context: ..
+      dockerfile: services/technician-service/Dockerfile
+    container_name: gfo-technician-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-technician:5432/technician_db
+      SPRING_DATASOURCE_USERNAME: technician
+      SPRING_DATASOURCE_PASSWORD: technician_secret
+    depends_on:
+      postgres-technician:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  work-order-service:
+    build:
+      context: ..
+      dockerfile: services/work-order-service/Dockerfile
+    container_name: gfo-work-order-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-workorder:5432/workorder_db
+      SPRING_DATASOURCE_USERNAME: workorder
+      SPRING_DATASOURCE_PASSWORD: workorder_secret
+      TECHNICIAN_SERVICE_URL: http://technician-service:8081
+      AUDIT_SERVICE_URL: http://audit-service:8083
+    depends_on:
+      postgres-workorder:
+        condition: service_healthy
+      technician-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  audit-service:
+    build:
+      context: ..
+      dockerfile: services/audit-service/Dockerfile
+    container_name: gfo-audit-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-audit:5432/audit_db
+      SPRING_DATASOURCE_USERNAME: audit
+      SPRING_DATASOURCE_PASSWORD: audit_secret
+    depends_on:
+      postgres-audit:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: gfo-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      TECHNICIAN_SERVICE_URL: http://technician-service:8081
+      WORK_ORDER_SERVICE_URL: http://work-order-service:8082
+      AUDIT_SERVICE_URL: http://audit-service:8083
+      JWT_JWK_SET_URI: http://keycloak:8080/realms/globalfieldops/protocol/openid-connect/certs
+    depends_on:
+      technician-service:
+        condition: service_healthy
+      work-order-service:
+        condition: service_healthy
+      audit-service:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: gfo-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+volumes:
+  pg-technician-data:
+  pg-workorder-data:
+  pg-audit-data:

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: technician-service-config
+  namespace: globalfieldops
+  labels:
+    app: technician-service
+    app.kubernetes.io/part-of: globalfieldops
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-technician:5432/technician_db"
+  SPRING_DATASOURCE_USERNAME: "technician"
